@@ -1,0 +1,51 @@
+import requests
+import json
+import os
+from datetime import datetime
+
+# Get your API key from NewsAPI.org
+API_KEY = "YOUR_API_KEY"
+QUERY = "AI models OR ChatGPT OR Gemini"
+URL = f"https://newsapi.org/v2/everything?q={QUERY}&sortBy=publishedAt&apiKey={API_KEY}"
+
+def fetch_and_save_ai_news():
+    """Fetches AI-related news and saves it to a JSON file."""
+    try:
+        response = requests.get(URL)
+        response.raise_for_status()
+        data = response.json()
+        articles = data.get("articles", [])
+
+        if not articles:
+            print("No new articles found.")
+            return
+
+        # Prepare a directory for the data
+        os.makedirs('data', exist_ok=True)
+        file_path = os.path.join('data', 'ai_news.json')
+
+        # Filter and structure the articles
+        ai_news_list = [
+            {
+                "title": article.get("title"),
+                "description": article.get("description"),
+                "url": article.get("url"),
+                "image_url": article.get("urlToImage"),
+                "source": article.get("source", {}).get("name"),
+                "publishedAt": article.get("publishedAt")
+            }
+            for article in articles if article.get("title") and article.get("url")
+        ]
+
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(ai_news_list, f, indent=4)
+        
+        print(f"Successfully fetched and saved {len(ai_news_list)} AI news articles.")
+
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching news: {e}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+if __name__ == "__main__":
+    fetch_and_save_ai_news()
